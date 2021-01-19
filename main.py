@@ -53,12 +53,6 @@ elif os.path.isfile('vcap-local.json'):
 # When running this app on the local machine, default the port to 8000
 port = int(os.getenv('PORT', 8000))
 
-df = pd.read_csv('conposcovidloc.csv') #change to covidInfoURL
-
-# Converting the column to a data format:
-# Need to turn back to datetime using isoformat: https://docs.python.org/3/library/datetime.html
-df['Accurate_Episode_Date'] =  pd.to_datetime(df['Accurate_Episode_Date'])
-
 @app.route('/')
 def root():
     return app.send_static_file('index.html')
@@ -148,6 +142,7 @@ def printHistory():
 
 #%-------------------------------------------------------------------------------------------%
 
+#Need to turn data back into datetime: https://www.programiz.com/python-programming/datetime/strptime
 def output_trends(dataframe=df,
                   city='Toronto',
 #                   case_resolution='Resolved',
@@ -167,11 +162,11 @@ def output_trends(dataframe=df,
     end_date = date.today() - timedelta(days=days_omitted)
     start_date = date.today() - timedelta(days=trend_data+days_omitted)
 
-    # Considering only specified range of dates:
+    # Considering only specified range of dates: QUERY FOR THIS
     df_current = data[data["Accurate_Episode_Date"].isin(
         pd.date_range(start_date, end_date))]
 
-    # Output df:
+    # Output df: STORE TEMP DF LOCALLY
     df_out = df_current[df_current['Reporting_PHU_City'] == city]
     out = df_out.groupby('Accurate_Episode_Date').nunique()
     out = out.sort_values(by=['Accurate_Episode_Date'])['Row_ID']
@@ -201,43 +196,7 @@ def how_many(dataframe=df,
     means_of_transport = 'Bus'+10%, 'Flight'+15%, 'Car'+0%
     '''
 
-    #this has been stored in the cloud already
-    # population_dict = {
-    #     'Windsor': 336000,
-    #     'Barrie': 145614,
-    #     'Port Hope': 16753,
-    #     'London': 5454141,
-    #     'Toronto': 2731571,
-    #     'Hamilton': 767000,
-    #     'Whitby': 128377,
-    #     'Thorold': 21663,
-    #     'Newmarket': 90000,
-    #     'Cornwall': 46589,
-    #     'Oakville': 193832,
-    #     'Kingston': 590940,
-    #     'Point Edward': 2037,
-    #     'Ottawa': 934243,
-    #     'Mississauga': 733083,
-    #     'Waterloo': 562000,
-    #     'Guelph': 120545,
-    #     'Stratford': 31500,
-    #     'St. Thomas': 38909,
-    #     'Chatham': 103700,
-    #     'Simcoe': 13922,
-    #     'Brantford': 115000,
-    #     'Thunder Bay': 121621,
-    #     'New Liskeard': 4402,
-    #     'Brockville': 21900,
-    #     'Peterborough': 202259,
-    #     'Timmins': 41788,
-    #     'North Bay': 51027,
-    #     'Sudbury': 161531,
-    #     'Belleville': 50716,
-    #     'Pembroke': 15260,
-    #     'Sault Ste. Marie': 75528,
-    #     'Owen Sound': 21341,
-    #     'Kenora': 15696}
-
+    #QUERY FROM DB
     populationQuery = query.Query(client['population'], selector={'cityField':city})
 
     for doc in populationQuery:
@@ -246,21 +205,21 @@ def how_many(dataframe=df,
 
     data = df.copy()
 
-    out = data[data['Reporting_PHU_City'] == city]
+    out = data[data['Reporting_PHU_City'] == city] #QUERY
     out.keys()
 
     # Fatal:
-    out_fatal = out[out['Outcome1'] == 'Fatal']
+    out_fatal = out[out['Outcome1'] == 'Fatal'] #QUERY
     out_fatal = out_fatal.groupby('Accurate_Episode_Date').nunique()
     num_fatal = np.sum(out_fatal['Row_ID'].to_numpy())
 
     # Resolved:
-    out_resolved = out[out['Outcome1'] == 'Resolved']
+    out_resolved = out[out['Outcome1'] == 'Resolved'] #QUERY
     out_resolved = out_resolved.groupby('Accurate_Episode_Date').nunique()
     num_resolved = np.sum(out_resolved['Row_ID'].to_numpy())
 
     # Not Resolved:
-    out_not_resolved = out[out['Outcome1'] == 'Not Resolved']
+    out_not_resolved = out[out['Outcome1'] == 'Not Resolved'] #QUERY
     out_not_resolved = out_not_resolved.groupby(
         'Accurate_Episode_Date').nunique()
     num_not_resolved = np.sum(out_not_resolved['Row_ID'].to_numpy())
@@ -270,6 +229,7 @@ def how_many(dataframe=df,
     num_sick = np.sum(out['Row_ID'].to_numpy())
 
     # ---------------------------------------------------------------
+    #same as above?
     # Days:
     end_date = date.today() - timedelta(days=days_omitted)
     start_date = date.today() - timedelta(days=trend_data+days_omitted)
