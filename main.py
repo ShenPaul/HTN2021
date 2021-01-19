@@ -46,6 +46,7 @@ elif os.path.isfile('vcap-local.json'):
         password = creds['password']
         url = 'https://' + creds['host']
         client = Cloudant(user, password, url=url, connect=True)
+        print('Connected')
         db = client.create_database(db_name, throw_on_exists=False)
 
 # On IBM Cloud Cloud Foundry, get the port number from the environment variable PORT
@@ -55,6 +56,7 @@ port = int(os.getenv('PORT', 8000))
 df = pd.read_csv('conposcovidloc.csv') #change to covidInfoURL
 
 # Converting the column to a data format:
+# Need to turn back to datetime using isoformat: https://docs.python.org/3/library/datetime.html
 df['Accurate_Episode_Date'] =  pd.to_datetime(df['Accurate_Episode_Date'])
 
 @app.route('/')
@@ -236,7 +238,7 @@ def how_many(dataframe=df,
     #     'Owen Sound': 21341,
     #     'Kenora': 15696}
 
-    populationQuery = cloudant.query.Querty (client['population'], selector={'cityField':city})
+    populationQuery = query.Query(client['population'], selector={'cityField':city})
 
     for doc in populationQuery:
         #need to get the population size and assign it here
